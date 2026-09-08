@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import cv2
+import numpy as np
 
 
 IMAGE_EXTENSIONS = {
@@ -18,6 +20,7 @@ IMAGE_EXTENSIONS = {
 GAUSSIAN_KERNEL = (5, 5)
 SIZE_256 = (256, 256)
 SIZE_128 = (128, 128)
+ImageFilter = Callable[[np.ndarray], np.ndarray]
 
 
 def save_image(image, output_path: Path) -> None:
@@ -44,6 +47,86 @@ def resize_with_gaussian(image, size: tuple[int, int]):
     """Apply Gaussian smoothing and resize an image to the requested size."""
     blurred = cv2.GaussianBlur(image, GAUSSIAN_KERNEL, 0)
     return cv2.resize(blurred, size, interpolation=cv2.INTER_AREA)
+
+
+def build_window_feature_vectors(
+    image: np.ndarray,
+    filters: Sequence[ImageFilter],
+    window_size: int = 32,
+) -> np.ndarray:
+    """Build one 3*N feature vector for every image window.
+
+    Each filter is applied to the original image and to two reduced scales
+    (half and one quarter of the original dimensions). The window is reduced
+    proportionally at each scale, so the default sizes are 32x32, 16x16 and
+    8x8. For filter ``i`` and scale ``j``, the value is stored at position
+    ``3 * i + j``.
+
+    Filters must receive one image and return an image with the same height
+    and width. The returned array has one row per complete window.
+    """
+    if image is None or image.ndim < 2:
+        raise ValueError("image deve ser um array com pelo menos duas dimensões")
+    if not filters:
+        raise ValueError("filters deve conter pelo menos um filtro")
+    if window_size <= 0:
+        raise ValueError("window_size deve ser maior que zero")
+
+    height, width = image.shape[:2]
+    scales = [
+        image,
+        cv2.resize(
+            image,
+            (max(1, width // 2), max(1, height // 2)),
+            interpolation=cv2.INTER_AREA,
+        ),
+        cv2.resize(
+            image,
+            (max(1, width // 4), max(1, height // 4)),
+            interpolation=cv2.INTER_AREA,
+        ),
+    ]
+
+    filtered_scales = []
+    for scaled_image in scales:
+        filtered_images = []
+        for filter_function in filters:
+            filtered_image = filter_function(scaled_image)
+            if filtered_image is None or filtered_image.ndim < 2:
+                raise ValueError("cada filtro deve retornar uma imagem válida")
+            if filtered_image.shape[:2] != scaled_image.shape[:2]:
+                raise ValueError(
+                    "cada filtro deve preservar as dimensões da imagem"
+                )
+            filtered_images.append(filtered_image)
+        filtered_scales.append(filtered_images)
+
+    rows = height // window_size
+    columns = width // window_size
+    vectors = []
+
+    for row in range(rows):
+        for column in range(columns):
+            vector = []
+            for filter_index in range(len(filters)):
+                for scale_index, filtered_images in enumerate(filtered_scales):
+                    scaled_height, scaled_width = scales[scale_index].shape[:2]
+                    scaled_window_height = max(
+                        1, round(window_size * scaled_height / height)
+                    )
+                    scaled_window_width = max(
+                        1, round(window_size * scaled_width / width)
+                    )
+                    y = row * scaled_window_height
+                    x = column * scaled_window_width
+                    window = filtered_images[filter_index][
+                        y : y + scaled_window_height,
+                        x : x + scaled_window_width,
+                    ]
+                    vector.append(float(np.mean(window)))
+            vectors.append(vector)
+
+    return np.asarray(vectors, dtype=np.float32)
 
 
 def find_images(input_dir: Path, recursive: bool) -> list[Path]:
