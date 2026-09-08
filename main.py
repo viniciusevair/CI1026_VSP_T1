@@ -244,6 +244,62 @@ def find_images(input_dir: Path, recursive: bool) -> list[Path]:
     )
 
 
+def process_image_directory(
+    input_dir: Path,
+    output_dir: Path,
+    filters: Sequence[ImageFilter] = FILTERS,
+    window_size: int = 32,
+    k: int = KMEANS_CLUSTERS,
+    recursive: bool = False,
+) -> tuple[int, int]:
+    """Process every image and return ``(processed, total)``.
+
+    The function is reusable by other scripts: callers can provide their own
+    filter functions and window size. Each image produces grayscale, resized
+    and K-means segmented outputs under ``output_dir``.
+    """
+    if not input_dir.is_dir():
+        raise NotADirectoryError(f"diretório de entrada não existe: {input_dir}")
+    if not filters:
+        raise ValueError("filters deve conter pelo menos um filtro")
+
+    images = find_images(input_dir, recursive)
+    if not images:
+        print(f"Nenhuma imagem encontrada em {input_dir}")
+        return 0, 0
+
+    processed = 0
+    for input_path in images:
+        relative_path = input_path.relative_to(input_dir)
+        output_path = output_dir / relative_path
+        output_256_path = output_dir / "256x256" / relative_path
+        output_128_path = output_dir / "128x128" / relative_path
+        segmented_path = output_dir / "segmented" / relative_path
+
+        try:
+            grayscale = convert_to_grayscale(input_path, output_path)
+            image_256 = resize_with_gaussian(grayscale, SIZE_256)
+            save_image(image_256, output_256_path)
+            image_128 = resize_with_gaussian(image_256, SIZE_128)
+            save_image(image_128, output_128_path)
+            segmented = segment_image_by_windows(
+                grayscale, filters, k, window_size
+            )
+            save_image(segmented, segmented_path)
+        except (OSError, ValueError, cv2.error) as exc:
+            print(f"Falha ao processar {input_path}: {exc}")
+            continue
+
+        print(
+            f"{input_path} -> {output_path}, "
+            f"{output_256_path}, {output_128_path}, {segmented_path}"
+        )
+        processed += 1
+
+    print(f"{processed}/{len(images)} imagem(ns) convertida(s).")
+    return processed, len(images)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -268,46 +324,26 @@ def main() -> int:
         action="store_true",
         help="também procura imagens em subdiretórios",
     )
+    parser.add_argument(
+        "--window-size",
+        type=int,
+        default=32,
+        help="tamanho da janela base (padrão: 32x32)",
+    )
     args = parser.parse_args()
 
     if not args.input_dir.is_dir():
         parser.error(f"diretório de entrada não existe: {args.input_dir}")
 
-    images = find_images(args.input_dir, args.recursive)
-    if not images:
-        print(f"Nenhuma imagem encontrada em {args.input_dir}")
-        return 0
-
-    converted = 0
-    for input_path in images:
-        relative_path = input_path.relative_to(args.input_dir)
-        output_path = args.output_dir / relative_path
-        output_256_path = args.output_dir / "256x256" / relative_path
-        output_128_path = args.output_dir / "128x128" / relative_path
-        segmented_path = args.output_dir / "segmented" / relative_path
-
-        try:
-            grayscale = convert_to_grayscale(input_path, output_path)
-            image_256 = resize_with_gaussian(grayscale, SIZE_256)
-            save_image(image_256, output_256_path)
-            image_128 = resize_with_gaussian(image_256, SIZE_128)
-            save_image(image_128, output_128_path)
-            segmented = segment_image_by_windows(
-                grayscale, FILTERS, KMEANS_CLUSTERS
-            )
-            save_image(segmented, segmented_path)
-        except (OSError, ValueError, cv2.error) as exc:
-            print(f"Falha ao processar {input_path}: {exc}")
-            continue
-
-        print(
-            f"{input_path} -> {output_path}, "
-            f"{output_256_path}, {output_128_path}, {segmented_path}"
-        )
-        converted += 1
-
-    print(f"{converted}/{len(images)} imagem(ns) convertida(s).")
-    return 0 if converted == len(images) else 1
+    processed, total = process_image_directory(
+        args.input_dir,
+        args.output_dir,
+        filters=FILTERS,
+        window_size=args.window_size,
+        k=KMEANS_CLUSTERS,
+        recursive=args.recursive,
+    )
+    return 0 if processed == total else 1
 
 
 if __name__ == "__main__":
