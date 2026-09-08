@@ -1,0 +1,91 @@
+\section{Resultados}
+
+A Figura~\ref{fig:comparacao} compara visualmente a imagem original com as
+versões em grayscale e segmentada. Os arquivos usados nesta comparação são
+as versões renomeadas do triângulo em \texttt{report/images}.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{original_triangulo.jpg}
+
+        \small Imagem original
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{grayscale_triangulo.jpg}
+
+        \small Imagem em grayscale
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{segmented_triangulo.jpg}
+
+        \small Imagem segmentada
+    \end{minipage}
+    \caption{Comparação entre a imagem original, a conversão para grayscale e a segmentação do triângulo.}
+    \label{fig:comparacao}
+\end{figure}
+
+Inclua nesta seção as observações sobre as diferenças entre as imagens e,
+se aplicável, tabelas com métricas quantitativas dos resultados.
+
+\subsection{Exemplos positivos e negativos}
+
+Para complementar a comparação anterior, foram selecionadas imagens que
+representam exemplos positivos e negativos para a análise de textura. Os
+arquivos foram copiados para \texttt{report/images} com nomes descritivos.
+
+\subsubsection{Exemplos positivos}
+
+\begin{figure}[H]
+    \centering
+    \triplaimagem
+        {original_arvores-ceu.jpg}
+        {grayscale_arvores-ceu.jpg}
+        {segmented_arvores-ceu.jpg}
+        {Árvores e céu}
+    \triplaimagem
+        {original_muro-ceu.jpg}
+        {grayscale_muro-ceu.jpg}
+        {segmented_muro-ceu.jpg}
+        {Muro e céu}
+    \triplaimagem
+        {original_muro.jpg}
+        {grayscale_muro.jpg}
+        {segmented_muro.jpg}
+        {Muro}
+    \triplaimagem
+        {original_floresta.jpg}
+        {grayscale_floresta.jpg}
+        {segmented_floresta.jpg}
+        {Floresta}
+    \triplaimagem
+        {original_poste-grama.jpg}
+        {grayscale_poste-grama.jpg}
+        {segmented_poste-grama.jpg}
+        {Poste e grama}
+    \caption{Exemplos positivos e suas versões em grayscale e segmentadas.}
+    \label{fig:exemplos-positivos}
+\end{figure}
+
+\subsubsection{Exemplos negativos}
+
+\begin{figure}[H]
+    \centering
+    \triplaimagem
+        {original_meio-fio.jpg}
+        {grayscale_meio-fio.jpg}
+        {segmented_meio-fio.jpg}
+        {Meio-fio}
+    \triplaimagem
+        {original_rua-grama.jpg}
+        {grayscale_rua-grama.jpg}
+        {segmented_rua-grama.jpg}
+        {Rua e grama}
+    \caption{Exemplos negativos e suas versões em grayscale e segmentadas.}
+    \label{fig:exemplos-negativos}
+\end{figure}

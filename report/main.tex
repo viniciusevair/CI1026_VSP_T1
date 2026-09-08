@@ -1,0 +1,55 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{geometry}
+
+\geometry{margin=2.5cm}
+\graphicspath{{images/}}
+
+\newcommand{\triplaimagem}[4]{%
+    \noindent
+    \begin{minipage}[t]{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=3.0cm,keepaspectratio]{#1}\\
+        \small Original
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=3.0cm,keepaspectratio]{#2}\\
+        \small Grayscale
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.31\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=3.0cm,keepaspectratio]{#3}\\
+        \small Segmentada
+    \end{minipage}
+    \par\smallskip
+    \centering\small\textbf{#4}\par\medskip
+}
+
+\title{T1 -- Textura}
+\author{Nome do Autor 1 \and Nome do Autor 2}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este relatório apresenta os resultados do processamento e da análise de
+texturas em imagens. Os nomes dos autores e os resultados definitivos devem
+ser preenchidos antes da entrega.
+\end{abstract}
+
+\input{sections/introducao}
+\input{sections/metodologia}
+\input{sections/resultados}
+\input{sections/conclusao}
+
+\end{document}
