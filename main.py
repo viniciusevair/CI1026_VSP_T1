@@ -20,7 +20,67 @@ IMAGE_EXTENSIONS = {
 GAUSSIAN_KERNEL = (5, 5)
 SIZE_256 = (256, 256)
 SIZE_128 = (128, 128)
+KMEANS_CLUSTERS = 4
 ImageFilter = Callable[[np.ndarray], np.ndarray]
+
+
+def make_kernel_filter(kernel: np.ndarray) -> ImageFilter:
+    """Create a filter function from a convolution kernel."""
+    def apply_kernel(image: np.ndarray) -> np.ndarray:
+        return cv2.filter2D(image, cv2.CV_32F, kernel)
+
+    return apply_kernel
+
+
+FILTERS = [
+    make_kernel_filter(
+        np.array(
+            [[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32
+        )
+    ),  # F1 horizontal edge
+    make_kernel_filter(
+        np.array(
+            [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float32
+        )
+    ),  # F2 vertical edge
+    make_kernel_filter(
+        np.array(
+            [[-2, -1, 0], [-1, 0, 1], [0, 1, 2]], dtype=np.float32
+        )
+    ),  # F3 45-degree edge
+    make_kernel_filter(
+        np.array(
+            [[0, 1, 2], [-1, 0, 1], [-2, -1, 0]], dtype=np.float32
+        )
+    ),  # F4 135-degree edge
+    make_kernel_filter(
+        np.array(
+            [
+                [0, -1, -1, -1, 0],
+                [-1, -1, -2, -1, -1],
+                [-1, -2, 16, -2, -1],
+                [-1, -1, -2, -1, -1],
+                [0, -1, -1, -1, 0],
+            ],
+            dtype=np.float32,
+        )
+    ),  # F5 circular / spot
+    make_kernel_filter(
+        np.array(
+            [[1, -1, 1], [-1, -4, -1], [1, -1, 1]], dtype=np.float32
+        )
+    ),  # F6 corner / junction
+    make_kernel_filter(
+        cv2.getGaborKernel(
+            (9, 9), 2.0, np.pi / 4, 5.0, 0.5, 0, cv2.CV_32F
+        )
+    ),  # F7 wave / ripple
+    make_kernel_filter(
+        np.array(
+            [[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=np.float32
+        )
+    ),  # F8 Laplacian / high-frequency detail
+]
 
 
 def save_image(image, output_path: Path) -> None:
@@ -129,6 +189,51 @@ def build_window_feature_vectors(
     return np.asarray(vectors, dtype=np.float32)
 
 
+def segment_image_by_windows(
+    image: np.ndarray,
+    filters: Sequence[ImageFilter],
+    k: int = KMEANS_CLUSTERS,
+    window_size: int = 32,
+) -> np.ndarray:
+    """Segment an image by clustering its window feature vectors."""
+    feature_vectors = build_window_feature_vectors(
+        image, filters, window_size
+    )
+    if len(feature_vectors) < k:
+        raise ValueError("a imagem não possui janelas suficientes para o K-means")
+
+    criteria = (
+        cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+        100,
+        0.2,
+    )
+    _, labels, _ = cv2.kmeans(
+        feature_vectors,
+        k,
+        None,
+        criteria,
+        10,
+        cv2.KMEANS_PP_CENTERS,
+    )
+
+    height, width = image.shape[:2]
+    rows = height // window_size
+    columns = width // window_size
+    labels = labels.reshape(rows, columns)
+    cluster_values = np.round(np.linspace(0, 255, k)).astype(np.uint8)
+    segmented = np.zeros((height, width), dtype=np.uint8)
+
+    for row in range(rows):
+        for column in range(columns):
+            y = row * window_size
+            x = column * window_size
+            segmented[y : y + window_size, x : x + window_size] = (
+                cluster_values[labels[row, column]]
+            )
+
+    return segmented
+
+
 def find_images(input_dir: Path, recursive: bool) -> list[Path]:
     """Return supported image files in input_dir."""
     candidates = input_dir.rglob("*") if recursive else input_dir.iterdir()
@@ -179,6 +284,7 @@ def main() -> int:
         output_path = args.output_dir / relative_path
         output_256_path = args.output_dir / "256x256" / relative_path
         output_128_path = args.output_dir / "128x128" / relative_path
+        segmented_path = args.output_dir / "segmented" / relative_path
 
         try:
             grayscale = convert_to_grayscale(input_path, output_path)
@@ -186,13 +292,17 @@ def main() -> int:
             save_image(image_256, output_256_path)
             image_128 = resize_with_gaussian(image_256, SIZE_128)
             save_image(image_128, output_128_path)
+            segmented = segment_image_by_windows(
+                grayscale, FILTERS, KMEANS_CLUSTERS
+            )
+            save_image(segmented, segmented_path)
         except (OSError, ValueError, cv2.error) as exc:
             print(f"Falha ao processar {input_path}: {exc}")
             continue
 
         print(
             f"{input_path} -> {output_path}, "
-            f"{output_256_path}, {output_128_path}"
+            f"{output_256_path}, {output_128_path}, {segmented_path}"
         )
         converted += 1
 
