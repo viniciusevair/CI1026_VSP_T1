@@ -116,11 +116,14 @@ def build_window_feature_vectors(
 ) -> np.ndarray:
     """Build one 3*N feature vector for every image window.
 
-    Each filter is applied to the original image and to two reduced scales
-    (half and one quarter of the original dimensions). The window is reduced
-    proportionally at each scale, so the default sizes are 32x32, 16x16 and
-    8x8. For filter ``i`` and scale ``j``, the value is stored at position
-    ``3 * i + j``.
+    Each filter is applied to a three-level Gaussian pyramid: the original
+    image, then a Gaussian-smoothed version reduced by half in each dimension,
+    followed by another Gaussian smoothing and reduction by half. The window
+    is reduced proportionally at each scale, so the default sizes are 32x32,
+    16x16 and 8x8. For filter ``i`` and scale ``j``, the value is stored at
+    position ``3 * i + j``. Each value is the mean absolute filter response
+    inside that window, which measures texture energy without cancellation
+    between positive and negative filter responses.
 
     Filters must receive one image and return an image with the same height
     and width. The returned array has one row per complete window.
@@ -133,19 +136,18 @@ def build_window_feature_vectors(
         raise ValueError("window_size deve ser maior que zero")
 
     height, width = image.shape[:2]
-    scales = [
-        image,
-        cv2.resize(
-            image,
-            (max(1, width // 2), max(1, height // 2)),
-            interpolation=cv2.INTER_AREA,
-        ),
-        cv2.resize(
-            image,
-            (max(1, width // 4), max(1, height // 4)),
-            interpolation=cv2.INTER_AREA,
-        ),
-    ]
+    scales = [image]
+    for _ in range(2):
+        previous_scale = scales[-1]
+        previous_height, previous_width = previous_scale.shape[:2]
+        smoothed = cv2.GaussianBlur(previous_scale, GAUSSIAN_KERNEL, 0)
+        scales.append(
+            cv2.resize(
+                smoothed,
+                (max(1, previous_width // 2), max(1, previous_height // 2)),
+                interpolation=cv2.INTER_AREA,
+            )
+        )
 
     filtered_scales = []
     for scaled_image in scales:
@@ -183,7 +185,7 @@ def build_window_feature_vectors(
                         y : y + scaled_window_height,
                         x : x + scaled_window_width,
                     ]
-                    vector.append(float(np.mean(window)))
+                    vector.append(float(np.mean(np.abs(window))))
             vectors.append(vector)
 
     return np.asarray(vectors, dtype=np.float32)
