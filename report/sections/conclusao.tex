@@ -1,4 +1,7 @@
 \section{Conclusão}
 
-Apresente as principais conclusões, limitações e possíveis melhorias para o
-método utilizado.
+Foi implementado um método clássico de segmentação por textura com oito filtros, três escalas, vetores de 24 dimensões e \textit{K-means}. Os resultados separam bem regiões com texturas diferentes e atendem ao objetivo exploratório do trabalho.
+
+Os grupos são calculados independentemente em cada imagem; por isso, um mesmo rótulo não possui significado fixo no conjunto. Também há perda de detalhe nas bordas por causa das janelas regulares.
+
+Como melhorias, podem ser testados outros valores de $k$, janelas sobrepostas, normalização dos descritores e suavização espacial dos rótulos. Um agrupamento único para todas as imagens também permitiria comparar os grupos entre fotografias.

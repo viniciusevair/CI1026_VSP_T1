@@ -1,4 +1,4 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass[12pt,onecolumn,final]{IEEEtran}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{geometry}
+\usepackage[hidelinks]{hyperref}
 
 \geometry{margin=2.5cm}
 \graphicspath{{images/}}
@@ -21,7 +22,7 @@
     \begin{minipage}[t]{0.31\textwidth}
         \centering
         \includegraphics[width=\linewidth,height=3.0cm,keepaspectratio]{#2}\\
-        \small Grayscale
+        \small Níveis de cinza
     \end{minipage}
     \hfill
     \begin{minipage}[t]{0.31\textwidth}
@@ -33,18 +34,23 @@
     \centering\small\textbf{#4}\par\medskip
 }
 
-\title{T1 -- Textura}
-\author{Nome do Autor 1 \and Nome do Autor 2}
-\date{\today}
+\title{Segmentação de Imagens Urbanas por Textura com Banco de Filtros Multiescala\\
+\large CI1026 - Visão Computacional e Percepção}
+
+\author{
+\IEEEauthorblockN{Marcelo Gyovani Pereira (GRR20221225)\\Vinicius Evair da Silva (GRR20221251)}\\
+\IEEEauthorblockA{
+Graduandos do Curso de Bacharelado em Ciência da Computação\\
+\textit{Departamento de Informática}\\
+\textit{Universidade Federal do Paraná -- UFPR}\\
+Curitiba, Brasil}
+}
 
 \begin{document}
-
 \maketitle
 
 \begin{abstract}
-Este relatório apresenta os resultados do processamento e da análise de
-texturas em imagens. Os nomes dos autores e os resultados definitivos devem
-ser preenchidos antes da entrega.
+Este trabalho apresenta uma abordagem clássica para segmentação de imagens baseada em textura. As imagens são convertidas para níveis de cinza e descritas localmente pela resposta média absoluta de um banco com oito filtros em três escalas. Cada janela é representada por um vetor de 24 atributos e agrupada por \textit{K-means} com distância Euclidiana. O experimento processou 162 fotografias. Os resultados mostram que o método separa regiões com texturas visualmente distintas, embora seja sensível às bordas entre materiais e à escolha do número de grupos.
 \end{abstract}
 
 \input{sections/introducao}
@@ -52,4 +58,14 @@ ser preenchidos antes da entrega.
 \input{sections/resultados}
 \input{sections/conclusao}
 
+\begin{thebibliography}{9}
+\bibitem{todt}
+E. Todt. \textit{Computer Vision and Perception: Texture}. Departamento de Informática, Universidade Federal do Paraná, 2025.
+
+\bibitem{humeau}
+A. Humeau-Heurtier. Texture Feature Extraction Methods: A Survey. \textit{IEEE Access}, 7:8975--9000, 2019. doi: \url{https://doi.org/10.1109/ACCESS.2018.2890743}.
+
+\bibitem{opencv}
+G. Bradski. The OpenCV Library. \textit{Dr. Dobb's Journal of Software Tools}, 2000.
+\end{thebibliography}
 \end{document}

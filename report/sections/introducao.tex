@@ -1,4 +1,5 @@
 \section{Introdução}
 
-Descreva brevemente o problema, o objetivo do trabalho e a motivação para o
-uso de características de textura.
+Textura descreve padrões locais de repetição, orientação e granularidade. Ela permite distinguir materiais como concreto, asfalto, vegetação e tijolo, mesmo sem identificar os objetos da imagem.
+
+Este trabalho segmenta fotografias por textura sem usar aprendizado profundo. As respostas de filtros em diferentes orientações e escalas são resumidas em janelas locais e comparadas em um espaço multidimensional \cite{todt}. O objetivo é agrupar janelas com comportamento semelhante; portanto, os grupos representam texturas, não classes semânticas.

@@ -1,4 +1,19 @@
 \section{Metodologia}
 
-Descreva aqui as etapas de pré-processamento, conversão para grayscale,
-segmentação e extração ou comparação das características utilizadas.
+\subsection{Imagens e pré-processamento}
+
+Foram processadas 162 fotografias próprias, todas com recortes de $512 \times 512$ pixels. As imagens RGB são convertidas para níveis de cinza com \texttt{COLOR\_BGR2GRAY}, mantendo somente a variação espacial de intensidade.
+
+\subsection{Banco de filtros e escalas}
+
+O banco contém oito filtros: bordas horizontal, vertical, a $45^\circ$ e a $135^\circ$; padrão circular; cantos; Gabor; e Laplaciano. Assim, as quatro orientações e o filtro circular exigidos estão incluídos.
+
+Cada filtro é aplicado em três escalas: a imagem original, uma versão suavizada por Gaussiana $5 \times 5$ e reduzida para $256 \times 256$, e uma terceira versão obtida pela repetição do mesmo processo, com $128 \times 128$ pixels.
+
+Como se trata de um experimento inicial e exploratório, foram priorizados filtros clássicos, de baixo custo computacional e sem ajuste por aprendizado. Os filtros de cantos, Gabor e Laplaciano complementam os detectores direcionais ao responder, respectivamente, a junções, padrões orientados e variações locais de intensidade.
+
+\subsection{Vetores de textura e agrupamento}
+
+A imagem é dividida em janelas não sobrepostas de $32 \times 32$ pixels. Nas escalas reduzidas, as janelas correspondentes têm $16 \times 16$ e $8 \times 8$ pixels. Para cada filtro e escala, calcula-se a média do valor absoluto da resposta na janela. Essa operação evita o cancelamento entre respostas positivas e negativas.
+
+Cada janela produz $8 \times 3 = 24$ atributos; uma imagem gera 256 vetores. Os vetores são agrupados por \textit{K-means} com $k=4$ e distância Euclidiana. Cada rótulo é então convertido em tom de cinza e preenchido na janela correspondente. A implementação usa OpenCV \cite{opencv} e está disponível em \url{https://github.com/viniciusevair/CI1026_VSP_T1}.
